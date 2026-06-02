@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Gonçalo Quitanda</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--green:#53a944;--green-dark:#3d8033;--green-light:#8ac33e;--green-pale:#f0f9eb;--bg:#f4f7f4;--card:#fff;--text:#1a1a1a;--muted:#6b7280;--border:#e2eed8;--red:#ef4444;--orange:#f97316;--blue:#3b82f6;--purple:#8b5cf6;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--green);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:24px}
+.login-box{background:#fff;border-radius:24px;padding:40px;width:90%;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.login-logo{font-size:2.5rem;margin-bottom:8px}
+.login-title{font-size:1.3rem;font-weight:900;color:var(--green-dark);margin-bottom:4px}
+.login-sub{font-size:0.8rem;color:var(--muted);margin-bottom:24px}
+.login-input{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:1rem;outline:none;text-align:center;letter-spacing:2px;margin-bottom:12px}
+.login-input:focus{border-color:var(--green)}
+.login-btn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem;cursor:pointer}
+.login-error{color:var(--red);font-size:0.8rem;margin-top:8px;display:none}
+
+/* HEADER */
+.header{background:var(--green);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(83,169,68,0.3)}
+.header-brand{color:#fff;font-size:1.1rem;font-weight:900}
+.header-sub{color:rgba(255,255,255,0.8);font-size:0.7rem;font-weight:500}
+.refresh-btn{background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.3);color:#fff;border-radius:10px;padding:7px 14px;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer}
+
+/* MAIN */
+.main{padding:20px;max-width:1200px;margin:0 auto}
+
+/* FILTROS */
+.filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filter-btn{padding:7px 16px;border:2px solid var(--border);border-radius:20px;background:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;color:var(--muted);transition:all .2s}
+.filter-btn.active{border-color:var(--green);background:var(--green);color:#fff}
+.filter-label{font-size:0.78rem;font-weight:700;color:var(--muted)}
+.last-update{font-size:0.7rem;color:var(--muted);margin-left:auto}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--card);border-radius:16px;padding:16px;border:1.5px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.kpi-label{font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.kpi-value{font-size:1.6rem;font-weight:900;color:var(--text);line-height:1}
+.kpi-value.green{color:var(--green)}
+.kpi-value.orange{color:var(--orange)}
+.kpi-value.blue{color:var(--blue)}
+.kpi-value.purple{color:var(--purple)}
+.kpi-sub{font-size:0.68rem;color:var(--muted);margin-top:4px}
+.kpi-badge{display:inline-block;background:var(--green-pale);color:var(--green-dark);border-radius:6px;padding:2px 8px;font-size:0.65rem;font-weight:700;margin-top:4px}
+.kpi-badge.red{background:#fef2f2;color:var(--red)}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.chart-card{background:var(--card);border-radius:16px;padding:20px;border:1.5px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.chart-title{font-size:0.85rem;font-weight:800;margin-bottom:16px;color:var(--text)}
+.chart-wrap{position:relative;height:200px}
+
+/* TABLES */
+.tables-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.table-card{background:var(--card);border-radius:16px;padding:20px;border:1.5px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.table-title{font-size:0.85rem;font-weight:800;margin-bottom:14px}
+.rank-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.rank-item:last-child{border-bottom:none}
+.rank-pos{width:22px;height:22px;border-radius:50%;background:var(--green-pale);color:var(--green-dark);font-size:0.7rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rank-pos.gold{background:#fef3c7;color:#92400e}
+.rank-pos.silver{background:#f1f5f9;color:#475569}
+.rank-pos.bronze{background:#fef0e6;color:#c2410c}
+.rank-name{flex:1;font-size:0.8rem;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-val{font-size:0.8rem;font-weight:900;color:var(--green);white-space:nowrap}
+.rank-sub{font-size:0.65rem;color:var(--muted)}
+
+/* ALERT */
+.alert-card{background:#fef2f2;border:1.5px solid #fecaca;border-radius:16px;padding:16px;margin-bottom:20px;display:none}
+.alert-card.visible{display:block}
+.alert-title{font-size:0.85rem;font-weight:800;color:var(--red);margin-bottom:8px}
+.alert-item{font-size:0.78rem;color:#7f1d1d;padding:3px 0}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+.empty-text{font-size:0.9rem;font-weight:600}
+
+/* LOADING */
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:0.9rem}
+
+/* PEDIDOS RECENTES */
+.pedido-row{padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+.pedido-row:last-child{border-bottom:none}
+.pedido-data{font-size:0.68rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.pedido-nome{font-size:0.8rem;font-weight:700}
+.pedido-itens{font-size:0.68rem;color:var(--muted);margin-top:1px}
+.pedido-total{font-size:0.85rem;font-weight:900;color:var(--green);white-space:nowrap;flex-shrink:0}
+.pay-pill{display:inline-block;font-size:0.6rem;font-weight:700;border-radius:6px;padding:2px 6px;margin-top:2px}
+.pay-pix{background:#d1fae5;color:#065f46}
+.pay-credito{background:#dbeafe;color:#1e40af}
+.pay-debito{background:#ede9fe;color:#5b21b6}
+
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .kpi-value{font-size:1.3rem}
+  .main{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🌿</div>
+    <div class="login-title">Gonçalo Quitanda</div>
+    <div class="login-sub">Painel Administrativo</div>
+    <input class="login-input" type="password" id="senhaInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="login-btn" onclick="entrar()">Entrar</button>
+    <div class="login-error" id="loginError">Senha incorreta. Tente novamente.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboardScreen" style="display:none">
+  <div class="header">
+    <div>
+      <div class="header-brand">🌿 Gonçalo Quitanda</div>
+      <div class="header-sub">Painel de Gestão</div>
+    </div>
+    <button class="refresh-btn" onclick="loadData()">↻ Atualizar</button>
+  </div>
+
+  <div class="main">
+    <div class="filters">
+      <span class="filter-label">Período:</span>
+      <button class="filter-btn active" onclick="setFiltro('hoje',this)">Hoje</button>
+      <button class="filter-btn" onclick="setFiltro('semana',this)">Esta semana</button>
+      <button class="filter-btn" onclick="setFiltro('mes',this)">Este mês</button>
+      <button class="filter-btn" onclick="setFiltro('tudo',this)">Tudo</button>
+      <span class="last-update" id="lastUpdate"></span>
+    </div>
+
+    <div id="content"><div class="loading">⏳ Carregando dados...</div></div>
+  </div>
+</div>
+
+<script>
+const WEBHOOK_URL = '/.netlify/functions/pedido';
+const SENHA = 'goncalo2025';
+let allData = {pedidos:[], itens:[]};
+let filtro = 'hoje';
+let charts = {};
+
+function entrar() {
+  const senha = document.getElementById('senhaInput').value;
+  if (senha === SENHA) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboardScreen').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function setFiltro(f, btn) {
+  filtro = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDash();
+}
+
+async function loadData() {
+  document.getElementById('content').innerHTML = '<div class="loading">⏳ Carregando dados...</div>';
+  try {
+    const url = WEBHOOK_URL + '?senha=' + SENHA;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.ok) {
+      allData = data;
+      document.getElementById('lastUpdate').textContent = 'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+      renderDash();
+    } else {
+      document.getElementById('content').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Erro ao carregar: ' + data.error + '</div></div>';
+    }
+  } catch(e) {
+    document.getElementById('content').innerHTML = '<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-text">Configure a URL do Apps Script no código</div></div>';
+  }
+}
+
+function filtrarPedidos() {
+  const hoje = new Date();
+  const todayStr = hoje.toLocaleDateString('pt-BR');
+  return allData.pedidos.filter(p => {
+    if (!p['Data']) return false;
+    const partes = p['Data'].toString().split('/');
+    if (partes.length < 3) return false;
+    const dataPed = new Date(partes[2], partes[1]-1, partes[0]);
+    if (filtro === 'hoje') return p['Data'] === todayStr;
+    if (filtro === 'semana') {
+      const diff = (hoje - dataPed) / (1000*60*60*24);
+      return diff >= 0 && diff < 7;
+    }
+    if (filtro === 'mes') {
+      return dataPed.getMonth() === hoje.getMonth() && dataPed.getFullYear() === hoje.getFullYear();
+    }
+    return true;
+  });
+}
+
+function filtrarItens(pedidosFiltrados) {
+  const ids = new Set(pedidosFiltrados.map(p => p['ID']));
+  return allData.itens.filter(i => ids.has(i['ID Pedido']));
+}
+
+function fmt(val) {
+  return 'R$ ' + parseFloat(val||0).toFixed(2).replace('.',',');
+}
+
+function renderDash() {
+  const pedidos = filtrarPedidos();
+  const itens = filtrarItens(pedidos);
+
+  if (pedidos.length === 0) {
+    document.getElementById('content').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-text">Nenhum pedido no período selecionado</div>
+      </div>`;
+    return;
+  }
+
+  // ---- KPIs ----
+  const totalFaturamento = pedidos.reduce((s,p) => s + parseFloat(p['Total']||0), 0);
+  const totalFrete = pedidos.reduce((s,p) => s + parseFloat(p['Frete']||0), 0);
+  const totalProdutos = totalFaturamento - totalFrete;
+  const ticketMedio = totalFaturamento / pedidos.length;
+  const qtdItensTotal = pedidos.reduce((s,p) => s + parseInt(p['Qtd Itens']||0), 0);
+
+  // Clientes únicos
+  const clientesMap = {};
+  pedidos.forEach(p => {
+    const nome = (p['Cliente']||'').trim();
+    if (!nome) return;
+    if (!clientesMap[nome]) clientesMap[nome] = {pedidos:0, total:0};
+    clientesMap[nome].pedidos++;
+    clientesMap[nome].total += parseFloat(p['Total']||0);
+  });
+  const clientesUnicos = Object.keys(clientesMap).length;
+  const ticketMedioCliente = clientesUnicos ? totalFaturamento / clientesUnicos : 0;
+
+  // Recompra
+  const recompradores = Object.values(clientesMap).filter(c => c.pedidos > 1).length;
+  const taxaRecompra = clientesUnicos ? ((recompradores / clientesUnicos) * 100).toFixed(0) : 0;
+
+  // Pagamentos
+  const pagamentos = {};
+  pedidos.forEach(p => {
+    const pg = p['Pagamento'] || 'Não informado';
+    pagamentos[pg] = (pagamentos[pg]||0) + 1;
+  });
+
+  // Produtos mais vendidos
+  const produtosMap = {};
+  itens.forEach(i => {
+    const nome = i['Produto'] || '';
+    if (!produtosMap[nome]) produtosMap[nome] = {qtd:0, receita:0, cat: i['Categoria']||''};
+    produtosMap[nome].qtd += parseInt(i['Qtd']||0);
+    produtosMap[nome].receita += parseFloat(i['Subtotal Item']||0);
+  });
+  const topProdutos = Object.entries(produtosMap).sort((a,b) => b[1].qtd - a[1].qtd).slice(0,10);
+  const topReceita = Object.entries(produtosMap).sort((a,b) => b[1].receita - a[1].receita).slice(0,5);
+
+  // Categorias
+  const catsMap = {};
+  itens.forEach(i => {
+    const cat = i['Categoria']||'Outros';
+    if (!catsMap[cat]) catsMap[cat] = 0;
+    catsMap[cat] += parseFloat(i['Subtotal Item']||0);
+  });
+
+  // Dias da semana
+  const diasMap = {Segunda:0,Terça:0,Quarta:0,Quinta:0,Sexta:0,Sábado:0,Domingo:0};
+  pedidos.forEach(p => {
+    const dia = p['Dia Semana'];
+    if (diasMap[dia] !== undefined) diasMap[dia]++;
+  });
+
+  // Horários
+  const horariosMap = {Manhã:0, Tarde:0, Noite:0};
+  pedidos.forEach(p => {
+    const hora = parseInt((p['Hora']||'00:00').split(':')[0]);
+    if (hora < 12) horariosMap['Manhã']++;
+    else if (hora < 18) horariosMap['Tarde']++;
+    else horariosMap['Noite']++;
+  });
+
+  // Clientes top
+  const topClientes = Object.entries(clientesMap).sort((a,b) => b[1].total - a[1].total).slice(0,5);
+
+  // Produtos parados (não vendidos no período)
+  const produtosVendidos = new Set(itens.map(i => i['Produto']));
+
+  // Bairros
+  const bairrosMap = {};
+  pedidos.forEach(p => {
+    const b = (p['Bairro']||'').trim();
+    if (b) bairrosMap[b] = (bairrosMap[b]||0) + 1;
+  });
+  const topBairros = Object.entries(bairrosMap).sort((a,b) => b[1]-a[1]).slice(0,5);
+
+  // Pedidos recentes
+  const recentes = [...pedidos].reverse().slice(0,8);
+
+  // Frete %
+  const pctFrete = totalFaturamento ? ((totalFrete / totalFaturamento)*100).toFixed(1) : 0;
+
+  // Comparativo semana anterior (só para filtro semana/mes/tudo)
+  const hoje = new Date();
+
+  const html = `
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">💰 Faturamento</div>
+        <div class="kpi-value green">${fmt(totalFaturamento)}</div>
+        <div class="kpi-sub">${pedidos.length} pedido${pedidos.length!==1?'s':''}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">🛒 Ticket Médio</div>
+        <div class="kpi-value orange">${fmt(ticketMedio)}</div>
+        <div class="kpi-sub">por pedido</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">👤 Ticket por Cliente</div>
+        <div class="kpi-value blue">${fmt(ticketMedioCliente)}</div>
+        <div class="kpi-sub">${clientesUnicos} cliente${clientesUnicos!==1?'s':''} únicos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">🔄 Taxa de Recompra</div>
+        <div class="kpi-value purple">${taxaRecompra}%</div>
+        <div class="kpi-sub">${recompradores} voltaram</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">📦 Itens Vendidos</div>
+        <div class="kpi-value">${qtdItensTotal}</div>
+        <div class="kpi-sub">unidades</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">🚴 Receita de Frete</div>
+        <div class="kpi-value">${fmt(totalFrete)}</div>
+        <div class="kpi-sub">${pctFrete}% do total</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">🥦 Receita Produtos</div>
+        <div class="kpi-value green">${fmt(totalProdutos)}</div>
+        <div class="kpi-sub">sem frete</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">📍 Bairro Top</div>
+        <div class="kpi-value" style="font-size:1rem">${topBairros[0]?topBairros[0][0]:'—'}</div>
+        <div class="kpi-sub">${topBairros[0]?topBairros[0][1]+' pedidos':''}</div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">💳 Forma de Pagamento</div>
+        <div class="chart-wrap"><canvas id="chartPgto"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🗂️ Receita por Categoria</div>
+        <div class="chart-wrap"><canvas id="chartCat"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">📅 Pedidos por Dia da Semana</div>
+        <div class="chart-wrap"><canvas id="chartDias"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🕐 Horário dos Pedidos</div>
+        <div class="chart-wrap"><canvas id="chartHora"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TABLES ROW -->
+    <div class="tables-grid">
+      <div class="table-card">
+        <div class="table-title">🏆 Top Produtos (quantidade)</div>
+        ${topProdutos.map((([nome,d],i) => `
+          <div class="rank-item">
+            <div class="rank-pos ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div>
+            <div>
+              <div class="rank-name">${nome}</div>
+              <div class="rank-sub">${d.cat}</div>
+            </div>
+            <div>
+              <div class="rank-val">${d.qtd} un.</div>
+              <div class="rank-sub">${fmt(d.receita)}</div>
+            </div>
+          </div>`)).join('')}
+      </div>
+
+      <div class="table-card">
+        <div class="table-title">💰 Top Produtos (receita)</div>
+        ${topReceita.map(([nome,d],i) => `
+          <div class="rank-item">
+            <div class="rank-pos ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div>
+            <div>
+              <div class="rank-name">${nome}</div>
+              <div class="rank-sub">${d.qtd} unidades</div>
+            </div>
+            <div class="rank-val">${fmt(d.receita)}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="table-card">
+        <div class="table-title">⭐ Clientes que Mais Compraram</div>
+        ${topClientes.map(([nome,d],i) => `
+          <div class="rank-item">
+            <div class="rank-pos ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div>
+            <div>
+              <div class="rank-name">${nome}</div>
+              <div class="rank-sub">${d.pedidos} pedido${d.pedidos!==1?'s':''}</div>
+            </div>
+            <div class="rank-val">${fmt(d.total)}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="table-card">
+        <div class="table-title">📍 Bairros que Mais Pedem</div>
+        ${topBairros.map(([bairro,qtd],i) => `
+          <div class="rank-item">
+            <div class="rank-pos ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div>
+            <div class="rank-name">${bairro}</div>
+            <div class="rank-val">${qtd} pedido${qtd!==1?'s':''}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- PEDIDOS RECENTES -->
+    <div class="table-card" style="margin-bottom:20px">
+      <div class="table-title">🕐 Pedidos Recentes</div>
+      ${recentes.map(p => `
+        <div class="pedido-row">
+          <div class="pedido-data">${p['Data']}<br>${p['Hora']}</div>
+          <div style="flex:1;min-width:0">
+            <div class="pedido-nome">${p['Cliente']||'—'}</div>
+            <div class="pedido-itens">${(p['Itens (resumo)']||'').substring(0,60)}${(p['Itens (resumo)']||'').length>60?'...':''}</div>
+            <span class="pay-pill pay-${(p['Pagamento']||'').toLowerCase().includes('pix')?'pix':(p['Pagamento']||'').toLowerCase().includes('cred')?'credito':'debito'}">${p['Pagamento']||''}</span>
+          </div>
+          <div class="pedido-total">${fmt(p['Total'])}</div>
+        </div>`).join('')}
+    </div>
+  `;
+
+  document.getElementById('content').innerHTML = html;
+
+  // Destruir charts anteriores
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  const cores = ['#53a944','#8ac33e','#3b82f6','#f97316','#8b5cf6','#ef4444','#06b6d4'];
+
+  // Chart pagamentos
+  charts.pgto = new Chart(document.getElementById('chartPgto'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(pagamentos),
+      datasets: [{data: Object.values(pagamentos), backgroundColor: cores, borderWidth: 2, borderColor: '#fff'}]
+    },
+    options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{family:'Outfit',size:11}}}}}
+  });
+
+  // Chart categorias
+  charts.cat = new Chart(document.getElementById('chartCat'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(catsMap),
+      datasets: [{data: Object.values(catsMap).map(v=>parseFloat(v.toFixed(2))), backgroundColor: cores, borderWidth: 2, borderColor: '#fff'}]
+    },
+    options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{family:'Outfit',size:11}}}}}
+  });
+
+  // Chart dias semana
+  const diasLabels = Object.keys(diasMap);
+  const diasVals = Object.values(diasMap);
+  charts.dias = new Chart(document.getElementById('chartDias'), {
+    type: 'bar',
+    data: {
+      labels: diasLabels,
+      datasets: [{data: diasVals, backgroundColor: diasVals.map(v => v === Math.max(...diasVals) ? '#53a944' : '#c8e6c9'), borderRadius: 8}]
+    },
+    options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{font:{family:'Outfit'}}}}}
+  });
+
+  // Chart horários
+  charts.hora = new Chart(document.getElementById('chartHora'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(horariosMap),
+      datasets: [{data: Object.values(horariosMap), backgroundColor: ['#fef3c7','#fed7aa','#1e3a5f'].map((_,i)=>cores[i+2]), borderRadius: 8}]
+    },
+    options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{font:{family:'Outfit'}}}}}
+  });
+}
+</script>
+</body>
+</html>
